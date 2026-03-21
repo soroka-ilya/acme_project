@@ -1,7 +1,10 @@
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 
 from .forms import BirthdayForm
 from .models import Birthday
@@ -12,15 +15,21 @@ class BirthdayListView(ListView):
     ordering = 'id'
     paginate_by = 10
 
-class BirthdayCreateView(CreateView):
+class BirthdayCreateView(LoginRequiredMixin, CreateView):
     model = Birthday
     form_class = BirthdayForm
+    success_url = reverse_lazy('birthday:list')
 
-class BirthdayUpdateView(UpdateView):
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+class BirthdayUpdateView(LoginRequiredMixin, UpdateView):
     model = Birthday
     form_class = BirthdayForm
+    success_url = reverse_lazy('birthday:list')
 
-class BirthdayDeleteView(DeleteView):
+class BirthdayDeleteView(LoginRequiredMixin, DeleteView):
     model = Birthday
     success_url = reverse_lazy('birthday:list')
 
@@ -33,3 +42,8 @@ class BirthdayDetailView(DetailView):
             self.object.birthday
         )
         return context
+
+
+@login_required
+def simple_view(request):
+    return HttpResponse('Страница для залогиненных пользователей!')
